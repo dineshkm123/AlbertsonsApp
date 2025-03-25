@@ -20,7 +20,7 @@ export default function DeviceInfo() {
 
     const fetchDeviceData = async () => {
         try {
-            const response = await fetch("http://192.168.1.43:3000/api/get-device-info"); // Replace with your API URL
+            const response = await fetch("http://192.168.1.35:3000/api/get-device-info"); // Replace with your API URL
             const data = await response.json();
             console.log("db inda barthiro data", data);
             setDeviceData(data);

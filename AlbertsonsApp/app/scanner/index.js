@@ -52,7 +52,7 @@ export default function Home() {
             console.log("Scanned data in front end:", scannedData); // ✅ Debugging log
 
             try {
-                const response = await fetch("http://192.168.1.43:3000/api/insert-device-info", {
+                const response = await fetch("http://192.168.1.35:3000/api/insert-device-info", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",

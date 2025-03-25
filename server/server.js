@@ -127,6 +127,44 @@ app.post("/api/upload", upload.single("image"), (req, res) => {
 
 
 //// LOGIN 
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+
+
+app.post("/user/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    // Fetch user by username
+    const [user] = await pool.query("SELECT * FROM Users WHERE username=?", [
+      username,
+    ]);
+
+    if (user.length === 0) {
+      return res.status(404).json({ error: "User does not exist" });
+    }
+
+    // Check if the password is correct
+    if (!bcrypt.compareSync(password, user[0].password)) {
+      return res.status(401).json({ error: "Incorrect password" });
+    }
+
+    // Generate JWT token for authenticated user
+    const token = jwt.sign(
+      { id: user[0].id, username },
+      process.env.JWT_PRIVATEKEY
+    );
+
+    return res
+      .status(200)
+      .cookie("auth", token, { httpOnly: true })
+      .json({ token });
+
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ error: "Internal server error: " + error.message });
+  }
+});
 
 
 // Start Server
