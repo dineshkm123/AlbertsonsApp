@@ -55,15 +55,16 @@
 
 import { Stack } from "expo-router";
 import { Provider as PaperProvider } from "react-native-paper";
-import {DeviceProvider} from "../app/Devicecontext"
+import { DeviceProvider } from "./Devicecontext"; // Ensure correct import
+
 export default function Layout() {
   return (
     <DeviceProvider>
       <PaperProvider>
-        <Stack screenOptions={{ headerShown: false }} />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="tabs" />
+        </Stack>
       </PaperProvider>
     </DeviceProvider>
-
   );
 }
-

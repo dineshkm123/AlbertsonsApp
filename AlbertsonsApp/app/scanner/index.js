@@ -32,27 +32,27 @@ export default function Home() {
     }, []);
 
     const fetchLocationAndSubmit = async () => {
-        let { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== "granted") {
-            setError("Permission to access location was denied");
-            return;
-        }
+        // let { status } = await Location.requestForegroundPermissionsAsync();
+        // if (status !== "granted") {
+        //     setError("Permission to access location was denied");
+        //     return;
+        // }
 
-        let loc = await Location.getCurrentPositionAsync({});
-        if (loc && loc.coords) {
-            setLocation(loc.coords);
+        // let loc = await Location.getCurrentPositionAsync({});
+        if (scannedData) {
+            // setLocation(loc.coords);
 
-            // Prepare data to send to backend
-            const requestData = {
-                ...scannedData, // ✅ Includes dynamic scanned data
-                latitude: loc.coords.latitude,
-                longitude: loc.coords.longitude,
-            };
+            // // Prepare data to send to backend
+            // const requestData = {
+            //     ...scannedData, // ✅ Includes dynamic scanned data
+            //     latitude: loc.coords.latitude,
+            //     longitude: loc.coords.longitude,
+            // };
 
             console.log("Scanned data in front end:", scannedData); // ✅ Debugging log
 
             try {
-                const response = await fetch("http://192.168.1.35:3000/api/insert-device-info", {
+                const response = await fetch("http://192.168.17.140:3000/api/insert-device-info", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -101,15 +101,16 @@ export default function Home() {
                                 console.log("Raw QR Data:", data); // ✅ Debugging log
                                 const jsonData = JSON.parse(data);
                                 if (typeof jsonData !== "object" || jsonData === null) {
-                                    throw new Error("Invalid JSON format");
+                                    alert("Data not found")
                                 }
                                 setScannedData(jsonData);
                                 setError(null);
-                                setIsFetchLocationEnabled(true);
+                                // setIsFetchLocationEnabled(true);
                             } catch (e) {
-                                console.error("QR Code Error:", e.message); // ✅ Log actual error
+                                // console.error("QR Code Error:", e.message); // ✅ Log actual error
                                 setScannedData(null);
-                                setError("Invalid QR format: " + e.message);
+                                if (!scannedData) {alert("Data not found") }
+                                // setError("Invalid QR format: " + e.message);
                             }
                             qrLock.current = true;
                             setTimeout(() => {
@@ -147,8 +148,8 @@ export default function Home() {
                 <Button
                     title="Submit"
                     onPress={fetchLocationAndSubmit}
-                    disabled={!isFetchLocationEnabled}
-                    color={isFetchLocationEnabled ? "blue" : "gray"}
+                    disabled={!scannedData}
+                    color={scannedData ? "blue" : "gray"}
                 />
             </View>
         </SafeAreaView>

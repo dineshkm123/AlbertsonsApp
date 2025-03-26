@@ -5,24 +5,28 @@ import {
     Image,
     StyleSheet,
     ActivityIndicator,
-    Pressable
+    Pressable,
+    Alert
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
 
 export default function DeviceInfo() {
     const [deviceData, setDeviceData] = useState(null);
     const [image, setImage] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [location, setLocation] = useState(null);
 
     useEffect(() => {
         fetchDeviceData();
+        requestLocationPermission();
     }, []);
 
+    // Fetch device details
     const fetchDeviceData = async () => {
         try {
-            const response = await fetch("http://192.168.1.35:3000/api/get-device-info"); // Replace with your API URL
+            const response = await fetch("http://192.168.17.140:3000/api/get-device-info");
             const data = await response.json();
-            console.log("db inda barthiro data", data);
             setDeviceData(data);
         } catch (error) {
             console.error("Error fetching device data:", error);
@@ -31,9 +35,21 @@ export default function DeviceInfo() {
         }
     };
 
+    // Request location permission
+    const requestLocationPermission = async () => {
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+            Alert.alert("Permission Denied", "Location permission is required.");
+            return;
+        }
+        let loc = await Location.getCurrentPositionAsync({});
+        setLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+    };
+
+    // Pick image from gallery
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            mediaTypes: [ImagePicker.MediaType.IMAGE],
             allowsEditing: true,
             quality: 1,
         });
@@ -43,6 +59,7 @@ export default function DeviceInfo() {
         }
     };
 
+    // Take a new photo
     const takePhoto = async () => {
         let result = await ImagePicker.launchCameraAsync({
             allowsEditing: true,
@@ -54,24 +71,51 @@ export default function DeviceInfo() {
         }
     };
 
-    const handleSubmit = () => {
-        alert("Reported successfully!");
+    const handleSubmit = async () => {
+        if (!image || !location) {
+            Alert.alert("Error", "Please upload an image and allow location access.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("image", {
+            uri: image,
+            type: "image/jpeg",
+            name: "report.jpg"
+        });
+        formData.append("latitude", location.latitude);
+        formData.append("longitude", location.longitude);
+
+        try {
+            const response = await fetch("http://192.168.17.140:3000/api/submit-report", {
+                method: "POST",
+                body: formData,
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+
+            const result = await response.json();
+            console.log("result", result);
+
+            if (response.ok) {
+                Alert.alert("Success", "Reported successfully!");
+            } else {
+                Alert.alert("Failed", result.message || "Try again.");
+            }
+        } catch (error) {
+            Alert.alert("Error", "Network error, try again later.");
+        }
     };
 
-    const CustomButton = ({ title, onPress }) => {
-        return (
-            <Pressable
-                onPress={onPress}
-                style={({ pressed }) => [
-                    styles.button,
-                    pressed ? styles.buttonPressed : null,
-                ]}
-                android_ripple={{ color: '#66bb6a' }}
-            >
-                <Text style={styles.buttonText}>{title}</Text>
-            </Pressable>
-        );
-    };
+    // Custom Button Component
+    const CustomButton = ({ title, onPress }) => (
+        <Pressable
+            onPress={onPress}
+            style={({ pressed }) => [styles.button, pressed ? styles.buttonPressed : null]}
+            android_ripple={{ color: "#66bb6a" }}
+        >
+            <Text style={styles.buttonText}>{title}</Text>
+        </Pressable>
+    );
 
     return (
         <View style={styles.container}>
@@ -112,25 +156,27 @@ export default function DeviceInfo() {
         </View>
     );
 }
+
+// Styles
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 20,
-        backgroundColor: '#e0f7fa', // Light cyan background
+        backgroundColor: "#e0f7fa",
     },
     header: {
         fontSize: 24,
-        fontWeight: 'bold',
+        fontWeight: "bold",
         marginBottom: 20,
-        color: '#1565c0', // Deep blue for the header
-        textAlign: 'center',
+        color: "#1565c0",
+        textAlign: "center",
     },
     infoContainer: {
-        width: '100%',
+        width: "100%",
         padding: 15,
-        backgroundColor: '#ffffff', // White background for the info container
+        backgroundColor: "#ffffff",
         borderRadius: 10,
-        shadowColor: '#004d40', // Dark teal shadow
+        shadowColor: "#004d40",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 6,
@@ -139,54 +185,54 @@ const styles = StyleSheet.create({
     },
     infoText: {
         fontSize: 16,
-        color: '#263238', // Dark gray for text
+        color: "#263238",
         marginBottom: 10,
     },
     errorText: {
         fontSize: 16,
-        color: '#ff3d00', // Bright red for error messages
+        color: "#ff3d00",
         marginBottom: 20,
-        textAlign: 'center',
+        textAlign: "center",
     },
     uploadContainer: {
-        width: '100%',
+        width: "100%",
         padding: 15,
-        backgroundColor: '#ffffff', // White background for the upload section
+        backgroundColor: "#ffffff",
         borderRadius: 10,
-        shadowColor: '#004d40', // Dark teal shadow
+        shadowColor: "#004d40",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 6,
         elevation: 3,
     },
     uploadbtn: {
-        marginBottom: 15, // Space between upload buttons
+        marginBottom: 15,
     },
     image: {
-        width: '100%',
+        width: "100%",
         height: 200,
         borderRadius: 10,
         marginBottom: 20,
         borderWidth: 2,
-        borderColor: '#00796b', // Teal border for the image
+        borderColor: "#00796b",
     },
     submitButton: {
         marginTop: 20,
-        alignItems: 'center',
+        alignItems: "center",
     },
     button: {
-        backgroundColor: '#1976D2', // Primary blue button
+        backgroundColor: "#1976D2",
         paddingVertical: 12,
         paddingHorizontal: 20,
         borderRadius: 10,
-        alignItems: 'center',
+        alignItems: "center",
     },
     buttonPressed: {
-        backgroundColor: '#1565C0', // Darker blue when pressed
+        backgroundColor: "#1565C0",
     },
     buttonText: {
-        color: '#ffffff', // White text on button
-        fontWeight: 'bold',
+        color: "#ffffff",
+        fontWeight: "bold",
         fontSize: 16,
     },
 });
